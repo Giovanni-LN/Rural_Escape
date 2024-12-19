@@ -25,7 +25,11 @@ public class PlayerAttack : MonoBehaviour
 
     private void OnAttack(InputAction.CallbackContext attackCallback)
     {
-        animator.SetTrigger("shot");
+        if (playerController.CanShot)
+        {
+            animator.SetTrigger("shot");
+            playerController.PV -= 2f;
+        }      
     }
 
     private void OnValidate()

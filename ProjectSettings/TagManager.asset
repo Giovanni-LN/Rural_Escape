@@ -10,7 +10,13 @@ TagManager:
   - DeathZone
   - Door
   - PlayerDoubleJumpActive
+  - PlayerShotActive
+  - PlayerSlideActive
   - Bat
+  - Climb
+  - Limit
+  - GetPv
+  - Damage
   layers:
   - Default
   - TransparentFX
@@ -27,7 +33,7 @@ TagManager:
   - DeathZone
   - Door
   - FlyEnemy
-  - 
+  - Climb
   - 
   - 
   - 
@@ -48,7 +54,7 @@ TagManager:
   - name: background
     uniqueID: 1544855379
     locked: 0
-  - name: main-layer
+  - name: grounded-layer
     uniqueID: 4125664611
     locked: 0
   - name: player

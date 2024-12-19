@@ -1,38 +1,59 @@
 using UnityEngine;
-using static UnityEngine.EventSystems.StandaloneInputModule;
 using UnityEngine.InputSystem;
-using System.Runtime.ExceptionServices;
+using UnityEngine.UI;
+
 
 public class PlayerController : MonoBehaviour
 {
+    
     private Rigidbody2D rb;
+    private Collider2D collider2;
     private Animator animator;
-    private bool onGround;
     private Vector2 inputMove;
     private bool doubleJump, doubleJumpActived;
+    [SerializeField] private bool canShot, canSlide;
+    private bool onGrounded;
+    private bool onSlide;
+    private bool pauseGame;
 
+    
+    [SerializeField] private LayerMask groundLayer;
     [SerializeField] private float speed;
+    [SerializeField] private float slideForce;
     [SerializeField] private float jumpForce;
     [SerializeField] private float doubleJumpForce;
-    [SerializeField] private float hitForce;
-    [SerializeField] private Transform checkPoint;
+    [SerializeField] private bool climbDetected;
+    [SerializeField] private bool onClinb;
 
-    public bool OnGround => onGround;
+    
+    [SerializeField] private float pv = 50;
+    [SerializeField] public Image pvImage;
+
+    [SerializeField] GameObject PausePanel, GameOverPanel;
     public Transform PlayerTransform => PlayerTransform;
+    public float PV { get { return pv; } set { pv = value; } }
+    public bool CanShot => canShot;
+    public bool CanSlide => canSlide;
+
     private void OnEnable()
     {
         Input.instance.Register_HorizontalMove_Callback(OnRunning); // registra para o evento do input system
         Input.instance.Register_Jump_Callback(OnJump);
+        Input.instance.Register_Slide_Callback(OnSlide);
+        Input.instance.Register_PauseGame_Callback(OnPauseGame);
     }
     private void OnDisable()
     {
         Input.instance.UnRegister_HorizontalMove_Callback(OnRunning); // remove o registro para o evento do input system
         Input.instance.UnRegister_Jump_Callback(OnJump);
+        Input.instance.UnRegister_Slide_Callback(OnSlide);
+        Input.instance.UnRegister_PauseGame_Callback(OnPauseGame);
     }
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        collider2 = GetComponent<Collider2D>();        
     }
 
     void Update()
@@ -41,52 +62,86 @@ public class PlayerController : MonoBehaviour
         {
             animator.SetFloat("verticalVelocity", rb.linearVelocityY);
         }
+        onGrounded = Physics2D.BoxCast(transform.position - new Vector3(0, 0.9f, 0), new Vector2(0.9f, 0.1f), 0, Vector2.down, 0.4f, groundLayer).collider != null;
+        animator.SetBool("ground", onGrounded);
+        if (onGrounded && doubleJumpActived && !doubleJump)
+        {
+            doubleJump = doubleJumpActived;
+        }
     }
     private void FixedUpdate()
     {
-        if (inputMove.x != 0)
+        if (inputMove.x != 0 && !onSlide)
         {
             rb.linearVelocityX = inputMove.x * speed;
         }
+        else if (inputMove.y != 0 && climbDetected)
+        {
+            onClinb = true;
+            rb.gravityScale = 0;
+            rb.linearVelocityY = inputMove.y * speed;
+            animator.SetBool("climb", onClinb);
+        }
+        pv -= 0.01f;
+        UpdatePvImage();
+        if (pv <= 0)
+        {
+            OnGamerOver();
+        }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            onGround = true;
-            animator.SetBool("ground", onGround);
-            if (doubleJumpActived)
-            {
-                doubleJump = true;
-            }
-        }
-        //  if (collision.gameObject.CompareTag("Bat"))
-        // {
-        //      rb.linearVelocity = new Vector2(0, 0);
-        //      float hitDirection = -transform.localScale.x;
-        //       rb.AddForceX(hitDirection * hitForce, ForceMode2D.Impulse);            
-        //   }
-    }
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            onGround = false;
-            animator.SetBool("ground", onGround);
-        }
-    }
     private void OnTriggerEnter2D(Collider2D collision)
     {
 
         if (collision.gameObject.CompareTag("DeathZone"))
-        {
-            gameObject.transform.position = checkPoint.transform.position;
+        {            
+            animator.SetTrigger("getHit");
+            OnGamerOver();
         }
         if (collision.gameObject.CompareTag("PlayerDoubleJumpActive"))
         {
             doubleJumpActived = true;
             Destroy(collision.gameObject);
+        }
+        if (collision.gameObject.CompareTag("PlayerShotActive"))
+        {
+            canShot = true;
+            Destroy(collision.gameObject);
+        }
+        if (collision.gameObject.CompareTag("PlayerSlideActive"))
+        {
+            canSlide = true;
+            Destroy(collision.gameObject);
+        }
+        if (collision.gameObject.CompareTag("Climb"))
+        {
+            climbDetected = true;
+        }
+        if (collision.CompareTag("Damage"))
+        {
+            pv -= Random.Range(1, 10);
+        }
+        if (collision.CompareTag("GetPv"))
+        {
+            pv += Random.Range(10, 20);
+            if (pv > 100)
+            {
+                pv = 100;
+            }
+        }
+
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Climb"))
+        {
+            climbDetected = false;
+            animator.SetBool("climb", false);
+            if (onClinb)
+            {
+                rb.gravityScale = 3f;
+                onClinb = false;
+            }
         }
     }
 
@@ -102,6 +157,7 @@ public class PlayerController : MonoBehaviour
                 transform.localScale = new Vector3(transform.localScale.x * -1, 1, 1);
             }
         }
+
         else if (moveCallback.canceled)
         {
             // Para o movimento quando o input é cancelado
@@ -110,16 +166,73 @@ public class PlayerController : MonoBehaviour
     }
     private void OnJump(InputAction.CallbackContext jumpCallback)
     {
-        if (onGround)
+        if (onGrounded)
         {
             rb.AddForceY(jumpForce, ForceMode2D.Impulse);
             animator.SetTrigger("jump");
         }
-        else if (!onGround && doubleJump)
+        else if (!onGrounded && doubleJump)
         {
             rb.linearVelocityY = 0;
             rb.AddForceY(doubleJumpForce, ForceMode2D.Impulse);
             animator.SetTrigger("jump");
+            doubleJump = false;
         }
+    }
+    private void OnSlide(InputAction.CallbackContext slideCallback)
+    {
+        if (onGrounded && canSlide)
+        {
+            rb.linearVelocityX = 0;
+            rb.gravityScale = 0;
+            collider2.isTrigger = true;
+            animator.SetTrigger("slide");
+            onSlide = true;
+            rb.AddForceX(transform.localScale.x * slideForce, ForceMode2D.Impulse);            
+        }
+    }
+    public void StopSlide()
+    {
+        rb.linearVelocityX = 0;
+        rb.gravityScale = 3;
+        collider2.isTrigger = false;
+        onSlide = false;
+        
+    }
+    private void OnPauseGame(InputAction.CallbackContext pauseCallback)
+    {
+        if (pauseCallback.started)
+        {
+            if (!pauseGame)
+            {
+                Time.timeScale = 0f;
+                print("acessou 1");
+                pauseGame = true;
+                PausePanel.SetActive(true);
+            }
+            else
+            {
+                Time.timeScale = 1f;
+                print("acessou 2");
+                pauseGame = false;
+                PausePanel.SetActive(false);
+            }
+        } 
+    }
+    public void DestroyPlayer()
+    {
+        Destroy(gameObject);
+    }
+
+    public void OnGamerOver()
+    {
+        animator.SetBool("death", true);
+        GameOverPanel.SetActive(true);
+        gameObject.SetActive(false);      
+        
+    }
+    public void UpdatePvImage()
+    {
+        pvImage.fillAmount = pv/100;
     }
 }

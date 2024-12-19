@@ -13,8 +13,13 @@ public class Input : MonoBehaviour
         {
             instance = this;
         }
+        else
+        {
+            Destroy(gameObject);
+        }
         input = new InputSystem_Actions();
         input.Enable();
+        DontDestroyOnLoad(gameObject);
     }
 
     public void Register_HorizontalMove_Callback(Action<InputAction.CallbackContext> moveCallback) // essa é a estrutura padrão para adicionar eventos para o input system
@@ -45,5 +50,25 @@ public class Input : MonoBehaviour
     {
         input.Player.Attack.performed -= attackCallback;
     }
+    public void Register_Slide_Callback(Action<InputAction.CallbackContext> slideCallback)
+    {
+        input.Player.Sprint.performed += slideCallback;
+    }
+    public void UnRegister_Slide_Callback(Action<InputAction.CallbackContext> slideCallback)
+    {
+        input.Player.Sprint.performed -= slideCallback;
+    }
 
+    public void Register_PauseGame_Callback(Action<InputAction.CallbackContext> pauseCallback)
+    {
+        input.Player.Interact.started += pauseCallback;
+    }
+    public void UnRegister_PauseGame_Callback(Action<InputAction.CallbackContext> pauseCallback)
+    {
+        input.Player.Interact.started -= pauseCallback;
+    }
+    public void DisableInput()
+    {
+        input.Disable();
+    }
 }

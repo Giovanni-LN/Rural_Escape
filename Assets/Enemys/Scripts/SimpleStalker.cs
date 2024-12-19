@@ -6,6 +6,8 @@ public class Enemy : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private LayerMask hitDamageCheck;
     private Transform playerTransform; // Referência ao Transform do jogador
+    Animator animator;
+    [SerializeField] float timeLife;
     
     
     private bool flip;
@@ -15,6 +17,7 @@ public class Enemy : MonoBehaviour
     {
         // Encontra o jogador na cena pela tag "Player"
         GameObject player = GameObject.FindGameObjectWithTag("Player");
+        animator = GetComponent<Animator>();
 
         if (player != null)
         {
@@ -43,6 +46,11 @@ public class Enemy : MonoBehaviour
             // Movimenta o inimigo em direção ao jogador
             transform.position += direction * speed;
         }
+        timeLife += .01f;
+        if(timeLife >= 3)
+        {
+            animator.SetTrigger("death");
+        }
     }
     private void OnValidate()
     {
@@ -54,11 +62,14 @@ public class Enemy : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (((1 << collision.gameObject.layer) & hitDamageCheck) != 0)
+        if (((1 << collision.gameObject.layer) & hitDamageCheck) != 0 || collision.CompareTag("Player"))
         {
-            Destroy(gameObject);
-           
+            animator.SetTrigger("death");
         }
+    }
+    public void OnDestroy()
+    {
+        Destroy(gameObject);
     }
 }
 

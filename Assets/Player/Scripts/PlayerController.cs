@@ -1,22 +1,26 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
+using System.Collections.Generic;
+using Unity.VisualScripting;
 
 
 public class PlayerController : MonoBehaviour
 {
-    
+
     private Rigidbody2D rb;
     private Collider2D collider2;
     private Animator animator;
     private Vector2 inputMove;
-    private bool doubleJump, doubleJumpActived;
+    [SerializeField] private bool doubleJump, doubleJumpActived;
     [SerializeField] private bool canShot, canSlide;
     private bool onGrounded;
     private bool onSlide;
-    private bool pauseGame;
 
-    
+    public bool onTerminal;
+    public string terminalId;
+    public List<string> terminalsChipsList = new List<string>();
+    public TerminalDoorSystem terminal;
+
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private float speed;
     [SerializeField] private float slideForce;
@@ -25,35 +29,36 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool climbDetected;
     [SerializeField] private bool onClinb;
 
-    
-    [SerializeField] private float pv = 50;
-    [SerializeField] public Image pvImage;
 
-    [SerializeField] GameObject PausePanel, GameOverPanel;
+    [SerializeField] private float pv = 50;
+
     public Transform PlayerTransform => PlayerTransform;
     public float PV { get { return pv; } set { pv = value; } }
     public bool CanShot => canShot;
     public bool CanSlide => canSlide;
+
+    public System.Action OnGameOver;
 
     private void OnEnable()
     {
         Input.instance.Register_HorizontalMove_Callback(OnRunning); // registra para o evento do input system
         Input.instance.Register_Jump_Callback(OnJump);
         Input.instance.Register_Slide_Callback(OnSlide);
-        Input.instance.Register_PauseGame_Callback(OnPauseGame);
+        Input.instance.Register_Active_Callback(OnActiveTeminal);
+
     }
     private void OnDisable()
     {
         Input.instance.UnRegister_HorizontalMove_Callback(OnRunning); // remove o registro para o evento do input system
         Input.instance.UnRegister_Jump_Callback(OnJump);
         Input.instance.UnRegister_Slide_Callback(OnSlide);
-        Input.instance.UnRegister_PauseGame_Callback(OnPauseGame);
+        Input.instance.UnRegister_Active_Callback(OnActiveTeminal);
     }
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
-        collider2 = GetComponent<Collider2D>();        
+        collider2 = GetComponent<Collider2D>();
     }
 
     void Update()
@@ -83,10 +88,9 @@ public class PlayerController : MonoBehaviour
             animator.SetBool("climb", onClinb);
         }
         pv -= 0.01f;
-        UpdatePvImage();
         if (pv <= 0)
         {
-            OnGamerOver();
+            GameOver();
         }
     }
 
@@ -94,9 +98,8 @@ public class PlayerController : MonoBehaviour
     {
 
         if (collision.gameObject.CompareTag("DeathZone"))
-        {            
-            animator.SetTrigger("getHit");
-            OnGamerOver();
+        {
+            GameOver();
         }
         if (collision.gameObject.CompareTag("PlayerDoubleJumpActive"))
         {
@@ -119,7 +122,13 @@ public class PlayerController : MonoBehaviour
         }
         if (collision.CompareTag("Damage"))
         {
+            rb.angularVelocity = 0;
             pv -= Random.Range(1, 10);
+            if (pv <= 0)
+                GameOver();
+            else
+                animator.SetTrigger("getHit");
+
         }
         if (collision.CompareTag("GetPv"))
         {
@@ -128,6 +137,18 @@ public class PlayerController : MonoBehaviour
             {
                 pv = 100;
             }
+        }
+        if (collision.CompareTag("Terminal"))
+        {
+            terminal = collision.gameObject.GetComponent<TerminalDoorSystem>();
+            terminalId = terminal.idChip;
+            onTerminal = true;
+        }
+       
+        if (collision.CompareTag("Chip"))
+        {
+            terminalsChipsList.Add(collision.gameObject.GetComponent<ChipTerminal>().idChip);
+            Destroy(collision.gameObject);
         }
 
     }
@@ -142,6 +163,12 @@ public class PlayerController : MonoBehaviour
                 rb.gravityScale = 3f;
                 onClinb = false;
             }
+        }
+        if (collision.CompareTag("Terminal"))
+        {
+            onTerminal = false;
+            terminal = null;
+            terminalId = "";
         }
     }
 
@@ -188,7 +215,7 @@ public class PlayerController : MonoBehaviour
             collider2.isTrigger = true;
             animator.SetTrigger("slide");
             onSlide = true;
-            rb.AddForceX(transform.localScale.x * slideForce, ForceMode2D.Impulse);            
+            rb.AddForceX(transform.localScale.x * slideForce, ForceMode2D.Impulse);
         }
     }
     public void StopSlide()
@@ -197,42 +224,27 @@ public class PlayerController : MonoBehaviour
         rb.gravityScale = 3;
         collider2.isTrigger = false;
         onSlide = false;
-        
+
     }
-    private void OnPauseGame(InputAction.CallbackContext pauseCallback)
-    {
-        if (pauseCallback.started)
-        {
-            if (!pauseGame)
-            {
-                Time.timeScale = 0f;
-                print("acessou 1");
-                pauseGame = true;
-                PausePanel.SetActive(true);
-            }
-            else
-            {
-                Time.timeScale = 1f;
-                print("acessou 2");
-                pauseGame = false;
-                PausePanel.SetActive(false);
-            }
-        } 
-    }
+
     public void DestroyPlayer()
     {
         Destroy(gameObject);
     }
 
-    public void OnGamerOver()
+    public void OnActiveTeminal(InputAction.CallbackContext activeCallback)
     {
-        animator.SetBool("death", true);
-        GameOverPanel.SetActive(true);
-        gameObject.SetActive(false);      
-        
+        if (onTerminal)
+        {
+            if (terminalsChipsList.Contains(terminalId))
+            {
+                terminal.OpenTheDoor();
+            }
+        }
     }
-    public void UpdatePvImage()
+    private void GameOver()
     {
-        pvImage.fillAmount = pv/100;
+        animator.SetTrigger("death");
+        OnGameOver?.Invoke();
     }
 }

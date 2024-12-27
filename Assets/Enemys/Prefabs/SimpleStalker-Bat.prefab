@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7377332232667007210}
   - component: {fileID: 5220985678353373347}
   - component: {fileID: 1569696815883324388}
-  m_Layer: 14
+  m_Layer: 10
   m_Name: SimpleStalker-Bat
   m_TagString: Damage
   m_Icon: {fileID: 0}
@@ -77,8 +77,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1724844031
+  m_SortingLayer: -2
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 9b80f82b9f75b854ea2b7fa7180e8798, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -193,3 +193,4 @@ MonoBehaviour:
   hitDamageCheck:
     serializedVersion: 2
     m_Bits: 3072
+  timeLife: 0

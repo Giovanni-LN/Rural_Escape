@@ -61,12 +61,21 @@ public class Input : MonoBehaviour
 
     public void Register_PauseGame_Callback(Action<InputAction.CallbackContext> pauseCallback)
     {
-        input.Player.Interact.started += pauseCallback;
+        input.Player.Pause.started += pauseCallback;
     }
     public void UnRegister_PauseGame_Callback(Action<InputAction.CallbackContext> pauseCallback)
     {
+        input.Player.Pause.started -= pauseCallback;
+    }
+    public void Register_Active_Callback(Action<InputAction.CallbackContext> pauseCallback)
+    {
+        input.Player.Interact.started += pauseCallback;
+    }
+    public void UnRegister_Active_Callback(Action<InputAction.CallbackContext> pauseCallback)
+    {
         input.Player.Interact.started -= pauseCallback;
     }
+
     public void DisableInput()
     {
         input.Disable();

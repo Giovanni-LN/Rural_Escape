@@ -9,8 +9,11 @@ EditorBuildSettings:
     path: Assets/Scenes/StartScene.unity
     guid: 629b96cac1e046f40b284bf0bff3c2de
   - enabled: 1
-    path: Assets/Scenes/GrottoScene.unity
-    guid: 2602ab68a1fdfd34cbdb0d7671a5333f
+    path: Assets/Scenes/RuralScape.unity
+    guid: 7c369c01d9a5d8b4da90ff04a377865e
+  - enabled: 1
+    path: Assets/Scenes/EndGame.unity
+    guid: 60204fa2ce3fd79408016ec4313fee91
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

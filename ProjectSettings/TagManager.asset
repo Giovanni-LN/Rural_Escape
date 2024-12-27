@@ -17,6 +17,9 @@ TagManager:
   - Limit
   - GetPv
   - Damage
+  - Terminal
+  - Chip
+  - Box
   layers:
   - Default
   - TransparentFX
@@ -34,8 +37,8 @@ TagManager:
   - Door
   - FlyEnemy
   - Climb
-  - 
-  - 
+  - LastEnemy
+  - Slide
   - 
   - 
   - 

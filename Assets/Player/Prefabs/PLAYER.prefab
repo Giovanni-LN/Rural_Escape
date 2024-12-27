@@ -104,7 +104,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 0d994d62c942e524b94ea944685e8e39, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -343,10 +343,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28cf94f9fd28e2a41b42052ce667ad28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doubleJump: 1
-  doubleJumpActived: 1
-  canShot: 1
-  canSlide: 1
+  doubleJump: 0
+  doubleJumpActived: 0
+  canShot: 0
+  canSlide: 0
   onTerminal: 0
   terminalId: 
   terminalsChipsList: []
